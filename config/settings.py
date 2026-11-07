@@ -19,14 +19,54 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# SECURITY
+# Real secrets NEVER go in git. On the server they come from environment variables
+# (hosting panel, or a server-only .env file — .env is in .gitignore).
+# See .env.example for the names.
 import os
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-only-insecure-key-change-in-production')
 
-# SECURITY WARNING: don't run with debug turned on in production!
+from django.core.exceptions import ImproperlyConfigured
+
+
+def _load_dotenv(path):
+    """Read KEY=VALUE lines from a local .env file (if any) without overriding real env vars."""
+    if path.exists():
+        for line in path.read_text(encoding='utf-8').splitlines():
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, value = line.split('=', 1)
+                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+_load_dotenv(BASE_DIR / '.env')
+
+# Local computer: DEBUG on by default. Server: set DJANGO_DEBUG=0.
 DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+_DEV_KEY = 'dev-only-insecure-key-never-use-on-a-server'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '')
+if not SECRET_KEY:
+    if not DEBUG:
+        # Fail loudly instead of silently running a public server with the key that is on GitHub.
+        raise ImproperlyConfigured(
+            'DJANGO_SECRET_KEY is not set. Production cannot start without its own secret key. '
+            'Generate one: python -c "import secrets; print(secrets.token_urlsafe(50))"')
+    SECRET_KEY = _DEV_KEY
+elif not DEBUG and (SECRET_KEY == _DEV_KEY or len(SECRET_KEY) < 40):
+    raise ImproperlyConfigured('DJANGO_SECRET_KEY is too short or is the public dev key. Use a new random key.')
+
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if h.strip()]
+
+if not DEBUG:
+    # Production hardening
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SSL_REDIRECT', '1') == '1'
+    SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_HSTS_SECONDS', '3600'))
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
 
 
 # Application definition
