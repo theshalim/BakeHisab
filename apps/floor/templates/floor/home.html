@@ -1,0 +1,106 @@
+{% extends "floor/base.html" %}
+{% block bodyclass %}wide{% endblock %}
+{% block head %}
+<style>
+  /* one-screen dashboard: no scrolling on a normal laptop screen */
+  .wrap { padding-bottom: 24px; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+  .top h1 { font-size: 22px; margin: 0; }
+  .top .sub { margin: 0; }
+  .cta.small { padding: 12px 18px 12px 12px; gap: 12px; }
+  .cta.small .plus { width: 40px; height: 40px; font-size: 26px; border-radius: 10px; }
+  .cta.small b { font-size: 17px; }
+
+  /* minmax(0, 1fr): a long product list can never push a column wider than half */
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+  .col h2 { margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .col h2 .n { background: var(--line); color: var(--ink); border-radius: 99px; font-size: 12px; padding: 0 8px; }
+
+  .card.plan { padding: 12px 14px; margin-bottom: 10px; }
+  .card.plan .row b { font-size: 16px; }
+  .card.plan .badge { font-size: 12px; padding: 2px 9px 2px 7px; }
+  .card.plan .sum { color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .card.plan .actions { margin-top: 8px; gap: 6px; }
+  .card.plan .mini { min-height: 34px; padding: 5px 10px; font-size: 13px; border-radius: 8px; }
+  .card.plan .mini svg { width: 15px; height: 15px; }
+
+  .empty { padding: 18px 12px; font-size: 15px; }
+  .pager { margin-top: 2px; }
+  .pg { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+  .pginfo { font-size: 13px; }
+
+  /* small one-line finder in the Completed heading: plan ID + date */
+  .colhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; min-height: 40px; }
+  .colhead h2 { margin: 0; white-space: nowrap; }
+  .col > h2 { min-height: 40px; }
+  .find { display: flex; align-items: center; gap: 4px; }
+  .find input { min-height: 34px; font-size: 14px; padding: 2px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); }
+  .find input[type=search] { width: 130px; }
+  .find input[type=date] { width: 140px; }
+  .find button { min-height: 34px; padding: 2px 10px; border: 0; border-radius: 8px; background: var(--navy); color: #fff;
+                 font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .find button:hover { background: var(--navy-2); }
+  .find .clear { color: var(--bad); text-decoration: none; font-size: 14px; font-weight: 600; padding: 0 6px; white-space: nowrap; }
+
+  @media (max-width: 860px) {
+    .cols { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .col + .col { margin-top: 12px; }
+  }
+  @media (max-width: 560px) {
+    .top { flex-direction: column; align-items: stretch; gap: 12px; }
+    .cta.small { width: 100%; }
+    .colhead { flex-wrap: wrap; }
+    .find { width: 100%; }
+    .find input[type=search] { flex: 1; width: auto; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="top">
+  <div>
+    <h1>স্বাগতম, {{ user.first_name|default:user.username }}</h1>
+    <p class="sub">{% now "d F Y" %}</p>
+  </div>
+  {% if not no_factory %}
+  <a class="cta small" href="{% url 'floor:new' %}">
+    <span class="plus">+</span>
+    <span><b>নতুন উৎপাদন (New Production)</b><span>পরিমাণ লিখুন, হিসাব সাথে সাথে দেখুন</span></span>
+  </a>
+  {% endif %}
+</div>
+
+{% if no_factory %}
+  <div class="error">আপনাকে এখনো কোনো কারখানায় (Factory) যুক্ত করা হয়নি। Admin-কে জানান।</div>
+{% else %}
+<div class="cols">
+  <section class="col">
+    <h2>চলমান (Running) {% if running.paginator.count %}<span class="n">{{ running.paginator.count }}</span>{% endif %}</h2>
+    {% for r in running_rows %}
+      {% include "floor/_plan_card.html" %}
+    {% empty %}
+      <div class="empty">{% if f.active %}কিছু পাওয়া যায়নি<br><small>(Nothing found)</small>{% else %}এখন কোনো উৎপাদন চলছে না<br><small>(No running production)</small>{% endif %}</div>
+    {% endfor %}
+    {% include "floor/_pager.html" with p=running %}
+  </section>
+
+  <section class="col">
+    <div class="colhead">
+      <h2>শেষ হয়েছে (Completed) {% if done.paginator.count %}<span class="n">{{ done.paginator.count }}</span>{% endif %}</h2>
+      <form class="find" method="get" role="search">
+        {% if request.GET.r %}<input type="hidden" name="r" value="{{ request.GET.r }}">{% endif %}
+        <input type="search" name="q" value="{{ f.q }}" placeholder="ID (PRD-…)" aria-label="ID">
+        <input type="date" name="date" value="{{ f.date }}" aria-label="তারিখ (Date)">
+        <button>খুঁজুন (Find)</button>
+        {% if f.active %}<a class="clear" href="{% url 'floor:home' %}{% if request.GET.r %}?r={{ request.GET.r }}{% endif %}" title="মুছুন (Clear)">✕</a>{% endif %}
+      </form>
+    </div>
+    {% for r in done_rows %}
+      {% include "floor/_plan_card.html" %}
+    {% empty %}
+      <div class="empty">{% if f.active %}কিছু পাওয়া যায়নি<br><small>(Nothing found)</small>{% else %}এখনো কোনো উৎপাদন শেষ হয়নি<br><small>(Nothing completed yet)</small>{% endif %}</div>
+    {% endfor %}
+    {% include "floor/_pager.html" with p=done %}
+  </section>
+</div>
+{% endif %}
+{% endblock %}

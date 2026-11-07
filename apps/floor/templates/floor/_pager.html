@@ -1,0 +1,7 @@
+{% if p.paginator.num_pages > 1 %}
+<nav class="pager" aria-label="pages">
+  {% if p.prev_url %}<a class="pg" href="{{ p.prev_url }}">← আগের (Prev)</a>{% else %}<span class="pg off">← আগের (Prev)</span>{% endif %}
+  <span class="pginfo">পাতা (Page) <b>{{ p.number }}</b> / {{ p.paginator.num_pages }}<br><small>মোট (Total) {{ p.paginator.count }}টি</small></span>
+  {% if p.next_url %}<a class="pg" href="{{ p.next_url }}">পরের (Next) →</a>{% else %}<span class="pg off">পরের (Next) →</span>{% endif %}
+</nav>
+{% endif %}

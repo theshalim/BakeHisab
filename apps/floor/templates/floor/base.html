@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0d2f3f">
+<title>{% block title %}বেকহিসাব (BakeHisab){% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3f5f6; --card: #ffffff; --ink: #12232c; --muted: #5f717b; --line: #e1e6e9; --field: #f7f9fa;
+    --navy: #0d2f3f; --navy-2: #134257;
+    --brand: #0d3b50; --brand-dark: #0a2c3b; --brand-soft: #e2edf2; --brand-ink: #ffffff;
+    --accent: #f6b21a; --accent-dark: #e09f05; --accent-soft: #fff3d1; --accent-ink: #1a1a1a;
+    --good: #1f7a3d; --good-soft: #e3f3e8; --bad: #b42318; --bad-soft: #fdecea;
+    --warn: #8a5a00; --warn-soft: #fff5d9;
+    --shadow: 0 1px 2px rgba(13, 47, 63, .04), 0 6px 20px rgba(13, 47, 63, .06);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 17px/1.55 "Hind Siliguri", "Noto Sans Bengali", system-ui, "Segoe UI", sans-serif; }
+  .num, td.r, .big, input[type=number] { font-variant-numeric: tabular-nums; }
+
+  /* app bar */
+  .appbar { position: sticky; top: 0; z-index: 10; background: var(--navy); }
+  .appbar .inner { max-width: 640px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center;
+                   justify-content: space-between; gap: 8px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; }
+  .brand b { font-size: 18px; line-height: 1.1; }
+  .brand small { display: block; color: #9fb4bf; font-size: 12px; font-weight: 500; }
+  .navbtn { display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid rgba(255,255,255,.3);
+            border-radius: 4px; padding: 6px 12px; color: #cfdbe1; font: inherit; font-size: 14px;
+            text-decoration: none; cursor: pointer; }
+  .navbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .navbtn svg { width: 16px; height: 16px; }
+
+  .wrap { max-width: 640px; margin: 0 auto; padding: 20px 16px 120px; }
+  /* wide pages (home): use the full desktop width */
+  .wide .wrap, .wide .appbar .inner { max-width: 1120px; }
+  h1 { font-size: 24px; line-height: 1.3; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: 15px; }
+  h2 { font-size: 15px; margin: 28px 0 10px; color: var(--muted); font-weight: 600; letter-spacing: .2px; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px;
+          margin-bottom: 12px; box-shadow: var(--shadow); }
+  a.card { display: block; color: inherit; text-decoration: none; transition: transform .12s, box-shadow .12s; }
+  a.card:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(13,47,63,.05), 0 10px 28px rgba(13,47,63,.1); }
+  .card.plan { border-left: 5px solid var(--line); }
+  .card.plan.running { border-left-color: var(--accent); }
+  .card.plan.done { border-left-color: var(--good); }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .muted { color: var(--muted); font-size: 15px; }
+  .big { font-size: 32px; font-weight: 700; line-height: 1.2; letter-spacing: -.5px; }
+  .hero { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%); color: #fff; border: 0; }
+  .hero .muted { color: #b9cad3; }
+  .hero .big { color: var(--accent); }
+
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 0;
+         border-radius: 14px; padding: 15px 16px; min-height: 56px; font: inherit; font-weight: 700; font-size: 18px;
+         cursor: pointer; text-decoration: none; transition: background .15s, transform .08s; }
+  .btn:active { transform: scale(.985); }
+  .btn:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
+  .btn-main { background: var(--accent); color: var(--accent-ink); box-shadow: 0 6px 16px rgba(246, 178, 26, .35); }
+  .btn-main:hover { background: var(--accent-dark); }
+  .btn-soft { background: var(--brand-soft); color: var(--brand); margin-top: 10px; }
+  .btn-link { background: none; color: var(--muted); font-weight: 500; font-size: 16px; min-height: 44px; padding: 8px; }
+  .btn-link:hover { color: var(--brand); }
+
+  .cta { display: flex; align-items: center; gap: 14px; padding: 18px; background: var(--navy); color: #fff;
+         border-radius: var(--radius); text-decoration: none; box-shadow: 0 8px 22px rgba(13, 47, 63, .25); }
+  .cta:hover { background: var(--navy-2); }
+  .cta .plus { flex: none; width: 48px; height: 48px; border-radius: 12px; background: var(--accent); color: var(--accent-ink);
+               display: grid; place-items: center; font-size: 30px; font-weight: 400; line-height: 1; }
+  .cta b { display: block; font-size: 19px; }
+  .cta span { font-size: 14px; opacity: .9; }
+
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 10px 3px 8px;
+           border-radius: 99px; font-weight: 600; white-space: nowrap; }
+  .badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .badge.draft { background: #efebe5; color: var(--muted); }
+  .badge.running { background: var(--accent-soft); color: #8a5d00; }
+  .badge.done { background: var(--good-soft); color: var(--good); }
+
+  label.field { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+                padding: 12px 0; border-bottom: 1px solid var(--line); }
+  label.field:last-child { border-bottom: 0; padding-bottom: 4px; }
+  label.field:first-child { padding-top: 4px; }
+  label.field .hint { display: block; color: var(--muted); font-size: 13px; }
+  input[type=number], input[type=date], select, input[type=text], input[type=password] {
+    font: inherit; font-size: 19px; min-height: 52px; padding: 10px 14px; border: 1.5px solid var(--line);
+    border-radius: 12px; background: var(--field); color: var(--ink); transition: border-color .15s, box-shadow .15s; }
+  input[type=number] { width: 132px; text-align: right; font-weight: 600; }
+  input:focus, select:focus { outline: none; border-color: var(--accent-dark); background: #fff;
+                              box-shadow: 0 0 0 4px var(--accent-soft); }
+  input::placeholder { color: #c4bbb0; font-weight: 400; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  td, th { padding: 10px 4px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; line-height: 1.3; }
+  tr:last-child td { border-bottom: 0; }
+  .r { text-align: right; white-space: nowrap; }
+  .up { color: var(--bad); } .down { color: var(--good); }
+  .total td { font-weight: 700; border-top: 2px solid var(--line); }
+  tr.cat td, .cathead { font-size: 13px; font-weight: 700; color: var(--brand); text-transform: none;
+                        letter-spacing: .3px; background: var(--brand-soft); padding: 6px 10px; border-bottom: 0; }
+  tr.cat td:first-child { border-radius: 6px 0 0 6px; } tr.cat td:last-child { border-radius: 0 6px 6px 0; }
+  tr.cat td[colspan] { border-radius: 6px; }
+  tr + tr.cat td { border-top: 8px solid var(--card); }
+  .cathead { border-radius: 6px; margin: 12px 0 2px; }
+  .cathead:first-child { margin-top: 0; }
+
+  .error, .warn { border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; display: flex; gap: 10px; }
+  .error { background: var(--bad-soft); color: var(--bad); font-weight: 600; }
+  .error::before { content: "!"; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--bad);
+                   color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 700; }
+  .warn { background: var(--warn-soft); color: var(--warn); display: block; }
+  .warn ul { margin: 8px 0 0; padding-left: 20px; }
+
+  .sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: rgba(243, 245, 246, .94);
+            backdrop-filter: blur(8px); border-top: 1px solid var(--line); padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
+  .sticky .inner { max-width: 640px; margin: 0 auto; }
+  details summary { cursor: pointer; color: var(--brand); font-weight: 600; padding: 2px 0; list-style: none; }
+  details summary::after { content: " ▾"; }
+  details[open] summary { margin-bottom: 8px; }
+  .empty { text-align: center; padding: 28px 16px; color: var(--muted); border: 1.5px dashed var(--line);
+           border-radius: var(--radius); }
+
+
+
+  /* card action buttons */
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .mini { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; min-height: 40px;
+          border: 1.5px solid var(--line); border-radius: 10px; background: var(--card); color: var(--brand);
+          font-size: 14px; font-weight: 600; text-decoration: none; }
+  .mini:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .mini svg { width: 16px; height: 16px; flex: none; }
+  .mini.off { color: #9aa7ae; background: #f6f8f9; cursor: not-allowed; }
+  .mini.off:hover { border-color: var(--line); }
+  .count { background: var(--navy); color: #fff; border-radius: 99px; font-size: 12px; padding: 0 7px; line-height: 18px; }
+
+  /* pagination */
+  .pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0 8px; }
+  .pg { padding: 10px 14px; min-height: 44px; display: inline-flex; align-items: center; border-radius: 10px;
+        background: var(--navy); color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; }
+  .pg:hover { background: var(--navy-2); }
+  .pg.off { background: #e6ebee; color: #9aa7ae; }
+  .pginfo { text-align: center; font-size: 14px; color: var(--muted); line-height: 1.3; }
+
+  /* history */
+  .card.hist { border-left: 5px solid var(--line); }
+  .card.hist.good { border-left-color: var(--good); }
+  .card.hist.bad { border-left-color: var(--bad); }
+  .card.hist.info { border-left-color: var(--accent); }
+  .reason { margin-top: 8px; background: var(--bad-soft); color: var(--bad); padding: 8px 10px; border-radius: 8px; font-size: 15px; }
+  table.diff { margin-top: 10px; font-size: 14px; }
+  table.diff td.old { color: var(--bad); text-decoration: line-through; text-decoration-color: rgba(180,35,24,.4); }
+  table.diff td.new { color: var(--good); font-weight: 700; }
+  /* confirm popup */
+  .modal { position: fixed; inset: 0; z-index: 50; display: none; align-items: flex-end; justify-content: center;
+           background: rgba(13, 47, 63, .55); padding: 16px; }
+  .modal.open { display: flex; animation: fade .15s ease-out; }
+  .modal .box { width: 100%; max-width: 440px; background: var(--card); border-radius: 18px; padding: 24px 20px 16px;
+                text-align: center; box-shadow: 0 20px 50px rgba(0, 0, 0, .3); animation: up .18s ease-out; }
+  .modal .icon { width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 50%; background: var(--accent-soft);
+                 color: #8a5d00; display: grid; place-items: center; font-size: 28px; font-weight: 700; }
+  .modal h3 { margin: 0 0 6px; font-size: 20px; }
+  .modal p { margin: 0 0 20px; color: var(--muted); font-size: 15px; }
+  .modal .btn-link { margin-top: 4px; }
+  @media (min-width: 600px) { .modal { align-items: center; } }
+  @keyframes fade { from { opacity: 0; } }
+  @keyframes up { from { transform: translateY(24px); opacity: 0; } }
+  /* hide number spinners so a scroll or tap can't silently change values */
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  @media (max-width: 380px) { input[type=number] { width: 112px; } .navbtn .t { display: none; } }
+</style>
+{% block head %}{% endblock %}
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+{% if user.is_authenticated %}
+<div class="appbar"><div class="inner">
+  <a class="brand" href="{% url 'floor:home' %}">{% include "floor/_logo.html" with size=36 %}
+    <span><b>বেকহিসাব</b><small>BakeHisab</small></span></a>
+  <span style="display:flex;gap:8px">
+    {% if user.is_staff %}<a class="navbtn" href="/admin/" title="Setup">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      <span class="t">সেটআপ (Setup)</span></a>{% endif %}
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="navbtn" title="Logout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      <span class="t">বের হন (Logout)</span></button></form>
+  </span>
+</div></div>
+{% endif %}
+<div class="wrap">
+  {% block content %}{% endblock %}
+</div>
+<script>
+  // a mouse wheel over a number box must not change the number
+  document.addEventListener('wheel', function () {
+    if (document.activeElement && document.activeElement.type === 'number') document.activeElement.blur();
+  }, { passive: true });
+  // prevent double-submit: disable the clicked button briefly
+  document.addEventListener('submit', function (e) {
+    var b = e.submitter; if (!b) return;
+    setTimeout(function () { b.disabled = true; b.style.opacity = .6; }, 0);
+  });
+  // coming back with the browser Back button: enable buttons again
+  window.addEventListener('pageshow', function () {
+    document.querySelectorAll('button[disabled]').forEach(function (b) { b.disabled = false; b.style.opacity = ''; });
+  });
+</script>
+<div class="modal" id="confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="box">
+    <div class="icon">?</div>
+    <h3 id="confirm-title"></h3>
+    <p id="confirm-text"></p>
+    <button type="button" class="btn btn-main" id="confirm-yes"></button>
+    <button type="button" class="btn btn-link" id="confirm-no">না, ফিরে যান (No, go back)</button>
+  </div>
+</div>
+<script>
+  // Any button/link with data-confirm="title" asks first. Optional: data-confirm-text, data-confirm-yes.
+  (function () {
+    var modal = document.getElementById('confirm'), pending = null;
+    function close() { modal.classList.remove('open'); pending = null; }
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest('[data-confirm]');
+      if (!el || el.dataset.confirmed) return;
+      e.preventDefault();
+      pending = el;
+      document.getElementById('confirm-title').textContent = el.dataset.confirm;
+      document.getElementById('confirm-text').textContent = el.dataset.confirmText || '';
+      document.getElementById('confirm-yes').textContent = el.dataset.confirmYes || 'হ্যাঁ (Yes)';
+      modal.classList.add('open');
+      document.getElementById('confirm-yes').focus();
+    });
+    document.getElementById('confirm-yes').addEventListener('click', function () {
+      var el = pending; close(); if (!el) return;
+      if (el.tagName === 'A') { location.href = el.href; return; }
+      el.dataset.confirmed = '1';
+      if (el.form) el.form.requestSubmit(el); else el.click();
+    });
+    document.getElementById('confirm-no').addEventListener('click', close);
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    window.addEventListener('pageshow', function () {
+      document.querySelectorAll('[data-confirmed]').forEach(function (b) { delete b.dataset.confirmed; });
+    });
+  })();
+</script>
+</body>
+</html>

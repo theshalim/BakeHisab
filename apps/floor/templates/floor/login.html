@@ -1,0 +1,93 @@
+{% extends "floor/base.html" %}
+{% block title %}ঢুকুন (Login) · বেকহিসাব (BakeHisab){% endblock %}
+{% block head %}
+<meta name="theme-color" content="#0d2f3f">
+<style>
+  :root { --navy: #0d2f3f; --accent: #f6b21a; --accent-dark: #e09f05; }
+  body { background: var(--navy); color: #e8eef1; }
+  .wrap { padding: 0 16px; }
+  .login { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center;
+           max-width: 380px; margin: 0 auto; padding: 32px 0; }
+
+  /* avatar circle with lines on both sides */
+  .avatar { display: flex; align-items: center; margin-bottom: 14px; }
+  .avatar .line { flex: 1; height: 1px; background: rgba(255, 255, 255, .55); }
+  .avatar .circle { flex: none; width: 92px; height: 92px; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, .8);
+                    display: grid; place-items: center; }
+  .avatar svg { width: 44px; height: 44px; color: #fff; }
+  .title { text-align: center; margin-bottom: 28px; }
+  .title b { display: block; font-size: 22px; color: #fff; letter-spacing: .2px; }
+  .title span { font-size: 14px; color: #9fb4bf; }
+
+  .err { background: rgba(255, 99, 82, .14); border: 1px solid rgba(255, 99, 82, .45); color: #ffb4aa;
+         border-radius: 4px; padding: 10px 12px; font-size: 14px; margin-bottom: 14px; }
+
+  /* input with an icon box glued on the left */
+  .ig { display: flex; height: 50px; margin-bottom: 14px; }
+  .ig .ic { flex: none; width: 50px; display: grid; place-items: center; border: 1.5px solid #8fa7b3;
+            border-right: 0; border-radius: 4px 0 0 4px; color: #e8eef1; transition: color .15s, border-color .15s; }
+  .ig .ic svg { width: 20px; height: 20px; }
+  .ig .box { position: relative; flex: 1; }
+  .ig input { width: 100%; height: 50px; min-height: 0; border: 0; border-radius: 0 4px 4px 0; background: #d9dde0;
+              color: #12232c; font-size: 17px; padding: 0 14px; box-shadow: none; }
+  .ig input::placeholder { color: #8a979e; }
+  .ig input:focus { background: #fff; box-shadow: 0 0 0 3px rgba(246, 178, 26, .55); border-color: transparent; }
+  .ig:focus-within .ic { border-color: var(--accent); color: var(--accent); }
+  .ig .toggle { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: 0;
+                color: #36515e; font: inherit; font-size: 13px; font-weight: 600; padding: 8px; cursor: pointer; }
+
+  .go { width: 100%; height: 50px; border: 0; border-radius: 4px; background: var(--accent); color: #1a1a1a;
+        font: inherit; font-size: 19px; font-weight: 600; cursor: pointer; margin-top: 4px;
+        transition: background .15s, transform .08s; }
+  .go:hover { background: var(--accent-dark); }
+  .go:active { transform: scale(.985); }
+
+  .opts { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 18px; font-size: 14px; }
+  .opts label { display: flex; align-items: center; gap: 8px; color: #cfdbe1; cursor: pointer; }
+  .opts input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }
+  .opts a { color: #cfdbe1; font-style: italic; text-decoration: none; cursor: pointer; text-align: right; }
+  .opts a:hover { color: var(--accent); }
+  .help { display: none; margin-top: 12px; font-size: 14px; color: #9fb4bf; text-align: center; }
+  .help.show { display: block; }
+  .rule { height: 1px; background: rgba(255, 255, 255, .25); margin-top: 26px; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="login">
+  <div class="avatar">
+    <span class="line"></span>
+    <span class="circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg></span>
+    <span class="line"></span>
+  </div>
+  <div class="title"><b>বেকহিসাব <small style="font-weight:500;color:#9fb4bf">(BakeHisab)</small></b><span>বেকারির উৎপাদন ও খরচের হিসাব (Bakery Production &amp; Cost)</span></div>
+
+  <form method="post">
+    {% csrf_token %}
+    {% if form.errors %}<div class="err">ইউজারনেম বা পাসওয়ার্ড ভুল (Wrong username or password)</div>{% endif %}
+
+    <div class="ig">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span>
+      <span class="box"><input type="text" name="username" value="{{ form.username.value|default:'' }}"
+             placeholder="ইউজারনেম (User Name)" aria-label="Username" autocomplete="username" autocapitalize="none" autofocus required></span>
+    </div>
+
+    <div class="ig">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/></svg></span>
+      <span class="box"><input id="p" type="password" name="password" placeholder="পাসওয়ার্ড (Password)" aria-label="Password"
+             autocomplete="current-password" required style="padding-right:84px">
+        <button type="button" class="toggle" onclick="var p=document.getElementById('p');var s=p.type==='password';p.type=s?'text':'password';this.textContent=s?'লুকান (Hide)':'দেখান (Show)';">দেখান (Show)</button></span>
+    </div>
+
+    <input type="hidden" name="next" value="{{ next }}">
+    <input type="hidden" name="remember" value="0">
+    <button class="go">ঢুকুন (Login)</button>
+
+    <div class="opts">
+      <label><input type="checkbox" name="remember" value="1" checked> মনে রাখুন (Remember me)</label>
+      <a onclick="document.getElementById('help').classList.toggle('show')">পাসওয়ার্ড ভুলে গেছেন? (Forgot?)</a>
+    </div>
+    <div class="help" id="help">Admin-কে বলুন, তিনি নতুন পাসওয়ার্ড দিয়ে দেবেন<br><small>(Ask your admin to reset it)</small></div>
+    <div class="rule"></div>
+  </form>
+</div>
+{% endblock %}

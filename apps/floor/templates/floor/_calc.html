@@ -1,0 +1,38 @@
+{% load floor %}
+<div class="card hero">
+  <div class="muted">মোট আনুমানিক খরচ (Estimated Total Cost)</div>
+  <div class="big">{{ est.total_cost|tk }} Tk</div>
+  <div class="muted">{{ est.total_qty|num }} পিস (PCS) · গড়ে প্রতি পিস (Avg. per piece) {{ est.cost_per_piece|tk }} Tk</div>
+</div>
+
+<h2>কাঁচামাল লাগবে (Raw Material Required)</h2>
+<div class="card">
+  <table>
+    {% for m in materials %}
+    {% ifchanged m.category %}<tr class="cat"><td colspan="2">{{ m.category }}</td></tr>{% endifchanged %}
+    <tr><td>{{ m.name }}</td><td class="r"><b>{{ m.qty|num }}</b> {{ m.unit }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<h2>প্রতি পিস খরচ (Cost per Piece)</h2>
+<div class="card">
+  <table>
+    {% for p in products %}
+    <tr><td>{{ p.name }}<br><span class="muted">{{ p.qty|num }} পিস · মোট {{ p.cost|tk }} Tk</span></td>
+        <td class="r"><b>{{ p.per_piece|tk }}</b> Tk</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<details class="card">
+  <summary>খরচের ভাগ দেখুন (Cost Breakdown)</summary>
+  <table>
+    {% for m in materials %}{% ifchanged m.category %}<tr class="cat"><td>{{ m.category }}</td><td class="r">{{ m.category_total|tk }}</td></tr>{% endifchanged %}
+    <tr><td style="padding-left:14px">{{ m.name }}</td><td class="r">{{ m.cost|tk }}</td></tr>{% endfor %}
+    <tr><td>শ্রমিক (Labour)</td><td class="r">{{ est.standard.labour|tk }}</td></tr>
+    <tr><td>বিদ্যুৎ (Electricity)</td><td class="r">{{ est.standard.electricity|tk }}</td></tr>
+    <tr><td>অন্যান্য (Other)</td><td class="r">{{ est.standard.other|tk }}</td></tr>
+    <tr class="total"><td>মোট (Total)</td><td class="r">{{ est.total_cost|tk }}</td></tr>
+  </table>
+</details>

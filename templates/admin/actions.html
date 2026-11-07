@@ -1,0 +1,5 @@
+{% extends "admin/actions.html" %}
+{# Bangla (English) words instead of "Go" #}
+{% block actions-submit %}
+<button type="submit" class="button run-btn" title="বাছাই করা কাজটি চালান (Run the selected action)" name="index" value="{{ action_index|default:0 }}">▶ চালান (Run)</button>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "floor/base.html" %}
+{% block content %}
+<div class="row"><h1>ইতিহাস (History)</h1><span class="badge {{ css }}">{{ label }}</span></div>
+<p class="sub">{{ plan.plan_no }} · {{ plan.production_date|date:"d M Y" }} · {{ plan.factory }}</p>
+
+{% for e in entries %}
+<div class="card hist {{ e.css }}">
+  <div class="row" style="align-items:flex-start">
+    <b>{{ e.action }}</b>
+    <span class="muted r" style="font-size:13px">{{ e.log.created_at|date:"d M Y" }}<br>{{ e.log.created_at|date:"h:i A" }}</span>
+  </div>
+  <div class="muted" style="margin-top:2px">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+    {% if e.log.user %}{% firstof e.log.user.get_full_name e.log.user.username %}{% else %}—{% endif %}
+  </div>
+  {% if e.log.reason %}<div class="reason"><b>কারণ (Reason):</b> {{ e.log.reason }}</div>{% endif %}
+  {% for s in e.summary %}<div class="muted" style="margin-top:6px">{{ s }}</div>{% endfor %}
+  {% if e.diff %}
+  <table class="diff">
+    <tr><th>কী (Field)</th><th class="r">আগে (Before)</th><th class="r">এখন (After)</th></tr>
+    {% for d in e.diff %}
+    <tr><td>{{ d.field }}</td><td class="r old">{{ d.old }}</td><td class="r new">{{ d.new }}</td></tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+</div>
+{% empty %}
+<div class="empty">এখনো কোনো ইতিহাস নেই<br><small>(No history yet)</small></div>
+{% endfor %}
+
+{% include "floor/_pager.html" with p=page %}
+<a class="btn btn-soft" href="{% url 'floor:detail' plan.pk %}">← ফিরে যান (Back)</a>
+{% endblock %}

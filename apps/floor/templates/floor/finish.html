@@ -1,0 +1,71 @@
+{% extends "floor/base.html" %}
+{% load floor %}
+{% block content %}
+{% if correcting %}
+<h1>সংশোধন (Correction)</h1>
+<p class="sub">{{ plan.plan_no }} · এই উৎপাদন শেষ হয়ে গেছে। যা বদলাবেন তার আগের ও নতুন মান, আপনার নাম আর সময় <b>ইতিহাসে (History)</b> থেকে যাবে।</p>
+{% else %}
+<h1>উৎপাদন শেষ (Finish Production)</h1>
+<p class="sub">{{ plan.plan_no }} · সব ঘরে হিসাবের সংখ্যা বসানো আছে। <b>শুধু যেটা আলাদা হয়েছে সেটা বদলান (Change only what was different)।</b></p>
+{% endif %}
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+{% if warnings %}
+<div class="warn"><b>⚠ একবার দেখে নিন (Please Check):</b><ul>{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+  <div style="margin-top:8px">ঠিক থাকলে নিচে <b>"হ্যাঁ, ঠিক আছে (Yes, Complete)"</b> চাপুন, না হলে সংখ্যা ঠিক করুন।</div></div>
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+  {% if correcting %}
+  <h2>সংশোধনের কারণ (Reason) <span style="color:var(--bad)">*</span></h2>
+  <div class="card">
+    <textarea name="reason" rows="2" required placeholder="যেমন: Labour বিল পরে এসেছে (e.g. labour bill came late)"
+              style="width:100%;font:inherit;font-size:17px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--field)">{{ reason }}</textarea>
+  </div>
+  {% endif %}
+
+  <h2>কত পিস হলো? (Output)</h2>
+  <div class="card">
+    {% for p in products %}
+    <div style="padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--line){% endif %}">
+      <b>{{ p.ln.variant }}</b> <span class="muted">(লক্ষ্য / Target {{ p.ln.planned_qty|num }})</span>
+      <div class="row" style="margin-top:6px">
+        <label>মোট বানানো<br><small class="muted">(Produced)</small><br><input type="number" inputmode="numeric" min="0" step="1" name="prod_{{ p.ln.id }}" value="{{ p.produced|num }}" required></label>
+        <label>নষ্ট / বাতিল<br><small class="muted">(Rejected)</small><br><input type="number" inputmode="numeric" min="0" step="1" name="rej_{{ p.ln.id }}" value="{{ p.rejected|num }}"></label>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2>কাঁচামাল কতটা লেগেছে? (Actual Raw Material Used)</h2>
+  <div class="card">
+    {% for m in materials %}
+    {% ifchanged m.category %}<div class="cathead">{{ m.category }}</div>{% endifchanged %}
+    <label class="field"><span>{{ m.name }}<span class="hint">হিসাব (Estimated): {{ m.est|num }} {{ m.unit }}</span></span>
+      <span><input type="number" inputmode="decimal" min="0" step="{{ m.step }}" name="mat_{{ m.id }}" value="{{ m.value|num }}" required> {{ m.unit }}</span></label>
+    {% endfor %}
+  </div>
+
+  <h2>অন্যান্য খরচ — টাকা (Other Costs, Tk)</h2>
+  <div class="card">
+    {% for c in costs %}
+    <label class="field"><span>{{ c.label }}<span class="hint">হিসাব (Estimated): {{ c.est|tk }}</span></span>
+      <input type="number" inputmode="decimal" min="0" step="any" name="{{ c.key }}" value="{{ c.value|num }}" required></label>
+    {% endfor %}
+  </div>
+
+  <div class="sticky"><div class="inner">
+    {% if correcting %}
+      <button class="btn btn-main" name="action" value="correct" data-confirm="সংশোধন সেভ করবেন? (Save correction?)" data-confirm-text="আগের ও নতুন মান ইতিহাসে লেখা থাকবে। (Old and new values will be kept in History.)" data-confirm-yes="হ্যাঁ, সেভ করুন (Yes, Save)">✓ সংশোধন সেভ করুন (Save Correction)</button>
+      <a class="btn btn-link" href="{% url 'floor:detail' plan.pk %}">বাতিল (Cancel)</a>
+    {% elif warnings %}
+      <input type="hidden" name="confirm" value="1">
+      <button class="btn btn-main" name="action" value="complete">হ্যাঁ, ঠিক আছে — শেষ করুন (Yes, Complete)</button>
+      <button class="btn btn-link" name="action" value="save" formnovalidate>পরে করবো — সেভ রাখুন (Save for Later)</button>
+    {% else %}
+      <button class="btn btn-main" name="action" value="complete" data-confirm="উৎপাদন শেষ করবেন? (Complete production?)" data-confirm-text="শেষ করার পর আর বদলানো যাবে না। সংখ্যাগুলো আরেকবার দেখে নিন। (No changes after this.)" data-confirm-yes="হ্যাঁ, শেষ করুন (Yes, Complete)">✓ শেষ করুন (Complete)</button>
+      <button class="btn btn-link" name="action" value="save" formnovalidate>পরে করবো — সেভ রাখুন (Save for Later)</button>
+    {% endif %}
+  </div></div>
+</form>
+{% endblock %}

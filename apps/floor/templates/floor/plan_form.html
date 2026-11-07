@@ -1,0 +1,182 @@
+{% extends "floor/base.html" %}
+{% load floor %}
+{% block bodyclass %}wide{% endblock %}
+{% block head %}
+<style>
+  /* compact form that still works with many products */
+  .ftop { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .ftop h1 { font-size: 22px; margin: 0; }
+  .ftop .sub { margin: 2px 0 0; }
+  .ftop .meta { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ftop .meta label { display: flex; flex-direction: column; font-size: 13px; color: var(--muted); font-weight: 600; gap: 2px; }
+  .ftop .meta input, .ftop .meta select { min-height: 44px; font-size: 16px; padding: 6px 10px; }
+
+  .layout { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start; }
+  .has-result .layout { grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); }
+
+  .tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .search { position: relative; flex: 1; min-width: 200px; }
+  .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); }
+  .search input { width: 100%; min-height: 44px; font-size: 16px; padding: 6px 12px 6px 38px; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1.5px solid var(--line);
+          border-radius: 99px; background: var(--card); font-size: 14px; cursor: pointer; user-select: none; }
+  .chip input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent-dark); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+  .grp { grid-column: 1 / -1; font-size: 13px; font-weight: 700; color: var(--brand); margin-top: 6px; }
+  .grp:first-child { margin-top: 0; }
+  .tile { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 8px 12px;
+          background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; cursor: text; }
+  .tile.on { border-color: var(--accent); background: #fffbef; }
+  .tile span { font-size: 15px; line-height: 1.25; }
+  .tile input[type=number] { width: 96px; min-height: 42px; font-size: 18px; padding: 4px 10px; }
+  .nomatch { display: none; padding: 16px; text-align: center; color: var(--muted); }
+
+  .result { position: sticky; top: 76px; max-height: calc(100vh - 280px); overflow: auto; padding-right: 4px;
+            overscroll-behavior: contain; }
+  .result td, .result th { padding: 6px 4px; font-size: 15px; }
+  .result .card { padding: 12px 14px; }
+  .result .big { font-size: 28px; }
+  .more { position: sticky; bottom: 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--brand);
+          background: linear-gradient(rgba(243,245,246,0), var(--bg) 45%); padding: 18px 0 4px; pointer-events: none; }
+  .result h2:first-of-type { margin-top: 14px; }
+  .result .card { margin-bottom: 10px; }
+
+  .wide .sticky .inner { max-width: 1120px; display: flex; align-items: center; gap: 12px; }
+  .sticky .count-line { flex: 1; font-size: 14px; color: var(--muted); }
+  .sticky .count-line b { color: var(--ink); font-size: 16px; }
+  .sticky .btn { width: auto; min-width: 240px; min-height: 50px; }
+  .sticky .btn-link { min-width: 0; }
+
+  @media (max-width: 900px) {
+    .has-result .layout { grid-template-columns: 1fr; }
+    .result { position: static; max-height: none; overflow: visible; }
+  }
+  @media (max-width: 600px) {
+    .tiles { grid-template-columns: 1fr; }
+    .wide .sticky .inner { flex-wrap: wrap; }
+    .sticky .count-line { flex-basis: 100%; text-align: center; }
+    .sticky .btn { width: 100%; min-width: 0; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<form method="post" id="planform" class="{% if calculated %}has-result{% endif %}">
+  {% csrf_token %}
+  <input type="hidden" name="local_uuid" value="{{ local_uuid }}">
+
+  <div class="ftop">
+    <div>
+      <h1>{% if plan %}পরিমাণ বদলান (Edit Quantity){% else %}নতুন উৎপাদন (New Production){% endif %}</h1>
+      <p class="sub">কত পিস বানাবেন লিখুন, যেটা বানাবেন না খালি রাখুন। তারপর “হিসাব দেখুন (Calculate)” চাপুন।</p>
+    </div>
+    <div class="meta">
+      <label>তারিখ (Date)<input type="date" name="date" value="{{ date|date:'Y-m-d' }}"></label>
+      {% if factories|length > 1 and not plan %}
+      <label>কারখানা (Factory)
+        <select name="factory" onchange="location='?factory='+this.value">
+          {% for f in factories %}<option value="{{ f.id }}" {% if f.id == factory.id %}selected{% endif %}>{{ f.name }}</option>{% endfor %}
+        </select></label>
+      {% else %}<input type="hidden" name="factory" value="{{ factory.id }}">{% endif %}
+    </div>
+  </div>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+  <div class="layout">
+    <section>
+      {% if rows|length > 6 %}
+      <div class="tools">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input type="search" id="q" placeholder="পণ্য খুঁজুন (Search product)" autocomplete="off">
+        </div>
+        <label class="chip"><input type="checkbox" id="filled"> শুধু লেখা গুলো (Filled only)</label>
+      </div>
+      {% endif %}
+
+      <div class="tiles" id="tiles">
+        {% for r in rows %}
+          {% ifchanged r.v.product_id %}<div class="grp" data-grp="{{ r.v.product_id }}">{{ r.v.product.name }}</div>{% endifchanged %}
+          <label class="tile {% if r.qty %}on{% endif %}" data-grp="{{ r.v.product_id }}" data-name="{{ r.v|lower }}">
+            <span>{{ r.v.name }}</span>
+            <input type="number" inputmode="numeric" min="0" step="1" name="qty_{{ r.v.id }}" value="{{ r.qty|num }}"
+                   placeholder="0" aria-label="{{ r.v }}">
+          </label>
+        {% empty %}<p class="muted">কোনো পণ্য (Product) সেট করা নেই। Admin-কে জানান।</p>{% endfor %}
+      </div>
+      <div class="nomatch" id="nomatch">কিছু পাওয়া যায়নি (No product found)</div>
+    </section>
+
+    {% if calculated %}
+    <aside class="result" id="result">{% include "floor/_calc.html" %}
+      <div class="more" id="more">↓ নিচে আরো আছে (Scroll for more)</div></aside>
+    {% endif %}
+  </div>
+
+  <div class="sticky"><div class="inner" id="actions">
+    <div class="count-line" id="countline"></div>
+    {% if calculated %}
+      <button class="btn btn-link" name="action" value="draft">পরে শুরু করবো — সেভ রাখুন (Save as Draft)</button>
+      <button class="btn btn-main" name="action" value="start" data-confirm="উৎপাদন শুরু করবেন? (Start production?)" data-confirm-text="শুরু করলে পরিমাণ আর দাম lock হয়ে যাবে, পরে বদলানো যাবে না। (Quantity and price will be locked.)" data-confirm-yes="হ্যাঁ, শুরু করুন (Yes, Start)">✓ উৎপাদন শুরু করুন (Start Production)</button>
+    {% else %}
+      <button class="btn btn-main" name="action" value="calc">হিসাব দেখুন (Calculate)</button>
+    {% endif %}
+  </div></div>
+</form>
+
+<script>
+  (function () {
+    var form = document.getElementById('planform');
+    var inputs = form.querySelectorAll('.tile input');
+    var q = document.getElementById('q'), filled = document.getElementById('filled');
+
+    function refresh() {
+      var n = 0, total = 0;
+      inputs.forEach(function (i) {
+        var v = parseFloat(i.value) || 0;
+        i.closest('.tile').classList.toggle('on', v > 0);
+        if (v > 0) { n++; total += v; }
+      });
+      document.getElementById('countline').innerHTML = n
+        ? '<b>' + n + 'টি পণ্য</b> · মোট <b>' + total.toLocaleString('en-US') + '</b> পিস <small>(' + n + ' products)</small>'
+        : 'এখনো কোনো পরিমাণ লেখা হয়নি (No quantity yet)';
+    }
+
+    function filter() {
+      var term = q ? q.value.trim().toLowerCase() : '', only = filled && filled.checked, shown = {}, any = false;
+      form.querySelectorAll('.tile').forEach(function (t) {
+        var v = parseFloat(t.querySelector('input').value) || 0;
+        var ok = (!term || t.dataset.name.indexOf(term) !== -1) && (!only || v > 0);
+        t.style.display = ok ? '' : 'none';
+        if (ok) { shown[t.dataset.grp] = true; any = true; }
+      });
+      form.querySelectorAll('.grp').forEach(function (g) { g.style.display = shown[g.dataset.grp] ? '' : 'none'; });
+      document.getElementById('nomatch').style.display = any || !inputs.length ? 'none' : 'block';
+    }
+
+    inputs.forEach(function (i) { i.addEventListener('input', function () { refresh(); }); });
+    if (q) { q.addEventListener('input', filter); q.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); }); }
+    if (filled) filled.addEventListener('change', filter);
+    refresh();
+
+    // hide the 'more below' hint once everything in the result panel is visible
+    var res = document.getElementById('result'), more = document.getElementById('more');
+    function hint() { if (res && more) more.style.visibility = (res.scrollHeight - res.scrollTop - res.clientHeight > 30) ? 'visible' : 'hidden'; }
+    if (res) { res.addEventListener('scroll', hint); window.addEventListener('resize', hint); hint(); }
+
+    {% if calculated %}
+    // a number changed after calculating -> the result shown is old, so ask to recalculate first
+    form.querySelectorAll('.tile input, input[type=date]').forEach(function (el) {
+      el.addEventListener('input', function () {
+        var a = document.getElementById('actions');
+        a.querySelectorAll('button').forEach(function (b) { b.remove(); });
+        if (!a.querySelector('.recalc')) {
+          a.insertAdjacentHTML('beforeend', '<button class="btn btn-main recalc" name="action" value="calc">আবার হিসাব দেখুন (Recalculate)</button>');
+        }
+        var r = document.querySelector('.result'); if (r) r.style.opacity = .45;
+      });
+    });
+    {% endif %}
+  })();
+</script>
+{% endblock %}
